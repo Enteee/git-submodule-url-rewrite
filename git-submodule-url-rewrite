@@ -1,12 +1,13 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 set -euo pipefail
 
+export SHELL="${SHELL?}"
 export GIT_SUBMODULE_CMD="git submodule --quiet"
 export UPDATE_CMD="${GIT_SUBMODULE_CMD} update --init"
 
 usage() {
   cat <<EOF
-usage: git submodule-url-rewrite [-h|--help] [-v|--verbose] [-q|--quiet] [-r|--recursive] [-s|--no-stage] [-u|--no-update] sed-script
+usage: git submodule-url-rewrite [-h|--help] [-v|--verbose] [-q|--quiet] [-r|--recursive] [-s|--no-stage] [-u|--no-update] sed-command
 
 Rewrites all submodule urls using the given sed-script
 
@@ -18,13 +19,13 @@ options:
   -s|--no-stage   Don't stage changed .gitmodule files for commit
   -u|--no-update  Don't run '${UPDATE_CMD}' in each submodule
 
-sed-script: A sed script used to transform urls.
+sed-command: A sed command used to transform urls.
 EOF
 }
 
 export VERBOSE=false
 export QUIET=false
-export RECURSIVE=""
+export RECURSIVE=false
 export NO_STAGE=false
 export NO_UPDATE=false
 export SED_COMMAND=""
@@ -52,7 +53,7 @@ while true; do
     ;;
 
     -r|--recursive)
-      RECURSIVE="--recursive" && shift
+      RECURSIVE=true && shift
     ;;
 
     -s|--no-stage)
@@ -72,34 +73,75 @@ while true; do
 done
 
 sm_url_rewrite(){
-  set -euo pipefail
-  if [ "${VERBOSE}" = true ]; then set -x; fi
+  local name="${1}" && shift
+  local toplevel="$(git rev-parse --show-toplevel)"
 
-  local gitmodules="${toplevel}/.gitmodules"
   local old_url="$(git config --file="${gitmodules}" "submodule.${name}.url")"
   local new_url="$(echo "${old_url}" | sed -r -e "${SED_COMMAND}")"
 
   if [ "${QUIET}" = false ]; then
-    echo "${name}: '${old_url}' -> '${new_url}'"
+    echo "rewrite url in '${toplevel}' submodule '${name}' from '${old_url}' to '${new_url}'"
   fi
 
   git config --file="${gitmodules}" "submodule.${name}.url" "${new_url}"
-  ${GIT_SUBMODULE_CMD} sync
-
-  if [ "${NO_STAGE}" = false ]; then
-    git -C "${toplevel}" add "${gitmodules}"
-  fi
-
-  if [ "${NO_UPDATE}" = false ]; then
-    ${UPDATE_CMD}
-  fi
 }
 export -f sm_url_rewrite
 
-if [ "${VERBOSE}" = true ]; then set -x; fi
+url_rewrite(){
+  set -euo pipefail
 
-if [ "${NO_UPDATE}" = false ]; then
-  ${UPDATE_CMD}
-fi
+  if [ "${VERBOSE}" = true ]; then set -x; fi
 
-${GIT_SUBMODULE_CMD} foreach ${RECURSIVE} sm_url_rewrite
+  local toplevel="$(git rev-parse --show-toplevel)"
+  local gitmodules="${toplevel}/.gitmodules"
+
+  (
+    cd "${toplevel}"
+
+    if [ ! -r "${gitmodules}" ]; then
+      return
+    fi
+
+    # loop for each submodule
+    #
+    # we can not use submodule foreach here
+    # because that requires a checkout of the
+    # submodule, which we don't what to do at
+    # this point in time since we are just about
+    # to rewrite the checkout url...
+    # all this sed / tr / xargs / printf magic
+    # is only here to make this script support
+    # submodules with newlines and spaces in
+    # the name... (ugly init?)
+    # On top of that, we have to read -rd ''
+    # in order to support \0 entry seperators.
+    # Which only really works in bash...
+    sed -nre \
+      's/^\[submodule \"(.*)\"]$/\1\x0/p' \
+      "${gitmodules}" \
+    | tr -d '\n' \
+    | xargs -0 -n1 printf "%b\0" \
+    | while IFS= read -rd '' submodule; do
+      sm_url_rewrite "${submodule}"
+    done
+
+    ${GIT_SUBMODULE_CMD} sync
+
+    if [ "${NO_STAGE}" = false ]; then
+      git -C "${toplevel}" add "${gitmodules}"
+    fi
+
+    # after rewrite we can update the submodules
+    if [ "${RECURSIVE}" = true ]; then
+
+      if [ "${NO_UPDATE}" = false ]; then
+        ${UPDATE_CMD}
+      fi
+
+      ${GIT_SUBMODULE_CMD} foreach ${SHELL} -c url_rewrite
+    fi
+  )
+}
+export -f url_rewrite
+
+url_rewrite
