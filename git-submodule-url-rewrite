@@ -79,8 +79,12 @@ sm_url_rewrite(){
   local old_url="$(git config --file="${gitmodules}" "submodule.${name}.url")"
   local new_url="$(echo "${old_url}" | sed -r -e "${SED_COMMAND}")"
 
+  if [ "${old_url}" == "${new_url}" ]; then
+    return
+  fi
+
   if [ "${QUIET}" = false ]; then
-    echo "rewrite url in '${toplevel}' submodule '${name}' from '${old_url}' to '${new_url}'"
+    echo "rewrite url for submodule '${name}' in '${toplevel}' from '${old_url}' to '${new_url}'"
   fi
 
   git config --file="${gitmodules}" "submodule.${name}.url" "${new_url}"
