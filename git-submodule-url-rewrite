@@ -2,26 +2,32 @@
 set -euo pipefail
 
 export GIT_SUBMODULE_CMD="git submodule --quiet"
-export UPDATE_CMD="git submodule update --init"
+export UPDATE_CMD="${GIT_SUBMODULE_CMD} update --init"
 
 usage() {
   cat <<EOF
-usage: git submodule-url-rewrite [-h|--help] [-r|--recursive] sed-script
+usage: git submodule-url-rewrite [-h|--help] [-v|--verbose] [-q|--quiet] [-r|--recursive] [-s|--no-stage] [-u|--no-update] sed-script
 
 Rewrites all submodule urls using the given sed-script
 
 options:
   -h|--help       Print this help
   -v|--verbose    Make this script verbose
+  -q|--quiet      Don't print anything
   -r|--recursive  Also rewrite submodules of submodules
-  -u|--update     Run '${UPDATE_CMD}' after url rewrite
+  -s|--no-stage   Don't stage changed .gitmodule files for commit
+  -u|--no-update  Don't run '${UPDATE_CMD}' in each submodule
+
+sed-script: A sed script used to transform urls.
 EOF
 }
 
 export VERBOSE=false
+export QUIET=false
 export RECURSIVE=""
-export UPDATE=false
-export SED_ARGS=""
+export NO_STAGE=false
+export NO_UPDATE=false
+export SED_COMMAND=""
 
 while true; do
   case "${1:-""}" in
@@ -38,18 +44,27 @@ while true; do
     -v|--verbose)
       VERBOSE=true && shift
       GIT_SUBMODULE_CMD="git submodule"
+      UPDATE_CMD="${GIT_SUBMODULE_CMD} update --init"
+    ;;
+
+    -q|--quiet)
+      QUIET=true && shift
     ;;
 
     -r|--recursive)
       RECURSIVE="--recursive" && shift
     ;;
 
-    -u|--update)
-      UPDATE=true && shift
+    -s|--no-stage)
+      NO_STAGE=true && shift
+    ;;
+
+    -u|--no-update)
+      NO_UPDATE=true && shift
     ;;
 
     *)
-      SED_ARGS="${*}"
+      SED_COMMAND="${1}" && shift
       break
     ;;
 
@@ -62,17 +77,29 @@ sm_url_rewrite(){
 
   local gitmodules="${toplevel}/.gitmodules"
   local old_url="$(git config --file="${gitmodules}" "submodule.${name}.url")"
-  local new_url="$(echo "${old_url}" | sed ${SED_ARGS})"
+  local new_url="$(echo "${old_url}" | sed -r -e "${SED_COMMAND}")"
+
+  if [ "${QUIET}" = false ]; then
+    echo "${name}: '${old_url}' -> '${new_url}'"
+  fi
 
   git config --file="${gitmodules}" "submodule.${name}.url" "${new_url}"
   ${GIT_SUBMODULE_CMD} sync
 
-  if [ "${UPDATE}" = true ]; then
+  if [ "${NO_STAGE}" = false ]; then
+    git -C "${toplevel}" add "${gitmodules}"
+  fi
+
+  if [ "${NO_UPDATE}" = false ]; then
     ${UPDATE_CMD}
   fi
 }
 export -f sm_url_rewrite
 
 if [ "${VERBOSE}" = true ]; then set -x; fi
+
+if [ "${NO_UPDATE}" = false ]; then
+  ${UPDATE_CMD}
+fi
 
 ${GIT_SUBMODULE_CMD} foreach ${RECURSIVE} sm_url_rewrite
