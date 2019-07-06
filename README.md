@@ -5,6 +5,19 @@ _Easy rewrite of git submodule urls_
 
 ```sh
 $ git submodule-url-rewrite -h
+usage: git submodule-url-rewrite [-h|--help] [-v|--verbose] [-q|--quiet] [-r|--recursive] [-s|--no-stage] [-u|--no-update] sed-command
+
+Rewrites all submodule urls using the given sed-script
+
+options:
+  -h|--help       Print this help
+  -v|--verbose    Make this script verbose
+  -q|--quiet      Don't print anything
+  -r|--recursive  Also rewrite submodules of submodules
+  -s|--no-stage   Don't stage changed .gitmodule files for commit
+  -u|--no-update  Don't run 'git submodule --quiet update --init' in each submodule
+
+sed-command: A sed command used to transform urls.
 ```
 
 ## Installation
