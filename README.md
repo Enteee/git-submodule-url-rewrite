@@ -20,6 +20,26 @@ options:
 sed-command: A sed command used to transform urls.
 ```
 
+### Example
+
+1. Clone [Enteee/example-dependency]
+```sh
+$ git clone https://github.com/Enteee/example-dependency.git
+```
+2. The `.gitmodules` file points to [githubtraining/example-submodule.git]
+```sh
+$ cat example-dependency/.gitmodules
+[submodule "js"]
+	path = js
+	url = https://github.com/githubtraining/example-submodule.git
+```
+3. Rewrite that to point to the repository [Enteee/example-submodule.git]:
+```sh
+$ git -C example-dependency/ submodule-url-rewrite 's|githubtraining|Enteee|'
+rewrite url for submodule 'js' in '/tmp/example-dependency' from 'https://github.com/githubtraining/example-submodule.git' to 'https://github.com/Enteee/example-submodule.git'
+```
+4. done!
+
 ## Installation
 
 Installation of the command is as simple as copying the script somewhere to
@@ -32,3 +52,8 @@ $ curl \
   --output git-submodule-url-rewrite
 $ chmod a+x git-submodule-url-rewrite
 ```
+
+
+[Enteee/example-dependency]:https://github.com/Enteee/example-dependency.git
+[githubtraining/example-submodule.git]:https://github.com/githubtraining/example-submodule.git
+[Enteee/example-submodule.git]:https://github.com/Enteee/example-submodule.git
