@@ -1,6 +1,12 @@
 # git-submodule-url-rewrite
 _Easy rewrite of git submodule urls_
 
+
+## Features
+
+ - [x] Rewrite submodule urls using Extended Regular Expressions (`sed -r`)
+ - [x] Recursive rewrite (`-r`) for big submodule hierarchies
+
 ## Usage
 
 ```sh
@@ -45,7 +51,7 @@ Rewrite that to point to the repository [Enteee/example-submodule.git]:
 ```sh
 $ git -C example-dependency/ submodule-url-rewrite 's|githubtraining|Enteee|'
 rewrite url for submodule 'js' in '/tmp/example-dependency' from 'https://github.com/githubtraining/example-submodule.git' to 'https://github.com/Enteee/example-submodule.git'
-```
+``` 
 
 ## Installation
 
