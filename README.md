@@ -37,8 +37,8 @@ The `.gitmodules` file points to [githubtraining/example-submodule.git]
 ```sh
 $ cat example-dependency/.gitmodules
 [submodule "js"]
-	path = js
-	url = https://github.com/githubtraining/example-submodule.git
+  path = js
+  url = https://github.com/githubtraining/example-submodule.git
 ```
 
 Rewrite that to point to the repository [Enteee/example-submodule.git]:
