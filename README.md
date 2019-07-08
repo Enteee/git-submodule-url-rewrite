@@ -1,11 +1,10 @@
 # git-submodule-url-rewrite
 _Easy rewrite of git submodule urls_
 
+Features:
 
-## Features
-
- - [x] Rewrite submodule urls using Extended Regular Expressions (`sed -r`)
- - [x] Recursive rewrite (`-r`) for big submodule hierarchies
+* Rewrite submodule urls using Extended Regular Expressions (`sed -r`)
+* Recursive rewrite (`-r`) for big submodule hierarchies
 
 ## Usage
 
