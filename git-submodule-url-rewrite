@@ -72,7 +72,7 @@ while true; do
   esac
 done
 
-sm_url_rewrite(){
+submodule_url_rewrite(){
   local name
   name="${1}" && shift
   local toplevel
@@ -97,7 +97,7 @@ sm_url_rewrite(){
 
   git config --file="${gitmodules}" "submodule.${name}.url" "${new_url}"
 }
-export -f sm_url_rewrite
+export -f submodule_url_rewrite
 
 url_rewrite(){
   set -euo pipefail
@@ -136,7 +136,7 @@ url_rewrite(){
     | tr -d '\n' \
     | xargs -0 -n1 printf "%b\0" \
     | while IFS= read -rd '' submodule; do
-      sm_url_rewrite "${submodule}"
+      submodule_url_rewrite "${submodule}"
     done
 
     ${GIT_SUBMODULE_CMD} sync
