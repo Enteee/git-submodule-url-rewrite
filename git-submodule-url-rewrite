@@ -73,11 +73,19 @@ while true; do
 done
 
 sm_url_rewrite(){
-  local name="${1}" && shift
-  local toplevel="$(git rev-parse --show-toplevel)"
+  local name
+  name="${1}" && shift
+  local toplevel
+  toplevel="$(git rev-parse --show-toplevel)"
 
-  local old_url="$(git config --file="${gitmodules}" "submodule.${name}.url")"
-  local new_url="$(echo "${old_url}" | sed -r -e "${SED_COMMAND}")"
+  local old_url
+  old_url="$(git config --file="${gitmodules}" "submodule.${name}.url")"
+  local new_url
+  new_url="$(echo "${old_url}" | sed -r -e "${SED_COMMAND}")"
+
+  if [ -z "${new_url}" ]; then
+    echo "New url is empty, check your sed command"
+  fi
 
   if [ "${old_url}" == "${new_url}" ]; then
     return
@@ -96,8 +104,10 @@ url_rewrite(){
 
   if [ "${VERBOSE}" = true ]; then set -x; fi
 
-  local toplevel="$(git rev-parse --show-toplevel)"
-  local gitmodules="${toplevel}/.gitmodules"
+  local toplevel
+  toplevel="$(git rev-parse --show-toplevel)"
+  local gitmodules
+  gitmodules="${toplevel}/.gitmodules"
 
   (
     cd "${toplevel}"
@@ -142,7 +152,7 @@ url_rewrite(){
         ${UPDATE_CMD}
       fi
 
-      ${GIT_SUBMODULE_CMD} foreach ${SHELL} -c url_rewrite
+      ${GIT_SUBMODULE_CMD} foreach "${SHELL} -$- -c url_rewrite"
     fi
   )
 }
