@@ -152,7 +152,7 @@ url_rewrite(){
         ${UPDATE_CMD}
       fi
 
-      ${GIT_SUBMODULE_CMD} foreach "${SHELL} -$- -c url_rewrite"
+      ${GIT_SUBMODULE_CMD} foreach "'${SHELL}' -$- -c url_rewrite"
     fi
   )
 }
