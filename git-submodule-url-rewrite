@@ -112,7 +112,7 @@ url_rewrite(){
   (
     cd "${toplevel}"
 
-    if [ ! -r "${gitmodules}" ]; then
+    if [ ! -r "${gitmodules}" ] || [ ! -s "${gitmodules}" ]; then
       return
     fi
 
